@@ -458,6 +458,42 @@ mod disk_deletion_tests {
     }
 
     #[test]
+    fn mixed_recently_deleted_selection_skips_demo_scenes_and_deletes_real_files_only() {
+        let path = original_path();
+        std::fs::write(&path, b"real-image").unwrap();
+        let mut app = app_for(&path);
+        let demo = Photo::new(
+            PhotoId(2),
+            Source::Demo { scene: 1 },
+            "demo",
+            "Demo",
+            1,
+            1,
+            "2026-11-09",
+        );
+        app.session.catalog.apply(Op::AddPhoto { photo: Box::new(demo) }).unwrap();
+        for id in [PhotoId(1), PhotoId(2)] {
+            app.session.catalog.apply(Op::SetDeleted { id, deleted: true }).unwrap();
+        }
+        app.session.source = lightcraft_engine::LibrarySource::RecentlyDeleted;
+        app.session.execute("library.select", &json!({"ids": [1, 2]})).unwrap();
+
+        assert!(crate::menus::ui_enabled(&app, "photo.deleteFromDisk"));
+        let response = app.run("photo.deleteFromDisk", json!({})).unwrap();
+        assert_eq!(response["count"], 1);
+        assert_eq!(response["skippedNoOriginal"], 1);
+        assert!(path.exists());
+        let Some(Dialog::ConfirmDeleteFromDisk { ids, paths, library }) = app.ui.dialog.take() else {
+            panic!("expected confirmation for the single real original");
+        };
+        assert_eq!(ids, vec![1]);
+        assert_eq!(delete_from_disk(&mut app, &ids, &paths, library).unwrap()["deletedFromDisk"], 1);
+        assert!(!path.exists());
+        assert!(app.session.catalog.photo(PhotoId(1)).is_none());
+        assert!(app.session.catalog.photo(PhotoId(2)).is_some(), "demo scenes have no disk original and remain untouched");
+    }
+
+    #[test]
     fn failed_file_removal_keeps_photo_in_catalog() {
         let path = original_path();
         std::fs::write(&path, b"test").unwrap();
