@@ -1581,7 +1581,9 @@ fn context_menu_delete(app: &mut LightcraftApp, ui: &mut egui::Ui) {
     );
     register(ui, "button:contextDeleteFromDisk", delete_disk.rect);
     if delete_disk.clicked() {
-        let _ = crate::menubar::run_item(app, "photo.deleteFromDisk", json!({}));
+        if let Err(e) = crate::menubar::run_item(app, "photo.deleteFromDisk", json!({})) {
+            app.toast_error(ui.ctx(), e);
+        }
     }
 }
 
