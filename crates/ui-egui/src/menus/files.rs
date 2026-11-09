@@ -43,7 +43,7 @@ pub(super) fn request_delete_from_disk(app: &mut LightcraftApp) -> Result<Value,
     if count == 0 {
         return Err("None of the selected photos has an original file on disk".into());
     }
-    app.ui.dialog = Some(Dialog::ConfirmDeleteFromDisk { ids, paths, library: app.session.library_generation() });
+    app.ui.dialog = Some(Dialog::ConfirmDeleteFromDisk { ids, paths, library: app.session.library_generation(), skipped_no_original });
     Ok(json!({"confirmationRequired": true, "count": count, "skippedNoOriginal": skipped_no_original}))
 }
 
