@@ -1573,6 +1573,9 @@ fn context_menu_delete(app: &mut LightcraftApp, ui: &mut egui::Ui) {
             let _ = crate::menubar::run_item(app, "photo.delete", json!({}));
         }
     }
+    // Separate the destructive disk operation from the catalog-only deletion actions,
+    // including when this menu is opened from Recently Deleted.
+    ui.separator();
     // Deliberately separate from Delete Permanently (which removes catalog records only).
     // The confirmation dialog explains that this destroys the original file itself.
     let delete_disk = ui.add_enabled(
