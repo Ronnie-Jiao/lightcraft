@@ -35,7 +35,7 @@ pub fn ui_enabled(app: &LightcraftApp, id: &str) -> bool {
             !cfg!(target_arch = "wasm32")
                 && !app.session.selected().is_empty()
                 && app.session.selected().iter().all(|id| {
-                    app.session.catalog.photo(*id).is_some_and(|p| matches!(p.source, lightcraft_catalog::Source::File { .. }))
+                    app.session.catalog.photo(*id).is_some_and(|p| matches!(&p.source, lightcraft_catalog::Source::File { .. }))
                 })
         },
         "view.thumbSizeUp" | "view.thumbSizeDown" => thumb_size_view(app),
