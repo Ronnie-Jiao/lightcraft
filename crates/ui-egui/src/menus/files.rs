@@ -425,6 +425,32 @@ mod disk_deletion_tests {
     }
 
     #[test]
+    fn recently_deleted_photos_can_still_delete_originals_from_disk() {
+        let path = original_path();
+        std::fs::write(&path, b"trash-test").unwrap();
+        let mut app = app_for(&path);
+        // This is the state of the screen in the user's screenshot: the photo
+        // is in Recently Deleted, and the selected original still exists.
+        app.session.catalog.apply(Op::SetDeleted { id: PhotoId(1), deleted: true }).unwrap();
+        app.session.source = lightcraft_engine::LibrarySource::RecentlyDeleted;
+        assert!(app.session.catalog.photo(PhotoId(1)).unwrap().deleted);
+        assert!(crate::menus::ui_enabled(&app, "photo.deleteFromDisk"));
+        assert_eq!(crate::shortcuts::shortcut_of(&app.ui.settings.keymap, "photo.deleteFromDisk"), Some("Shift+Delete"));
+
+        let request = app.run("photo.deleteFromDisk", json!({})).unwrap();
+        assert_eq!(request["confirmationRequired"], true);
+        assert!(path.exists(), "choosing the menu item must only open a confirmation");
+
+        let Some(Dialog::ConfirmDeleteFromDisk { ids, paths, library }) = app.ui.dialog.take() else {
+            panic!("expected a confirmation dialog for the Recently Deleted selection");
+        };
+        let result = delete_from_disk(&mut app, &ids, &paths, library).unwrap();
+        assert_eq!(result["deletedFromDisk"], 1);
+        assert!(!path.exists(), "the confirmed action should delete the original on disk");
+        assert!(app.session.catalog.photo(PhotoId(1)).is_none(), "the catalog record should also be removed");
+    }
+
+    #[test]
     fn failed_file_removal_keeps_photo_in_catalog() {
         let path = original_path();
         std::fs::write(&path, b"test").unwrap();
