@@ -314,6 +314,13 @@ pub enum Dialog {
     ConfirmDelete {
         count: usize,
     },
+    /// Irreversible deletion of the selected original files, never the catalog alone.
+    /// Paths are captured at request time and revalidated after confirmation.
+    ConfirmDeleteFromDisk {
+        ids: Vec<u64>,
+        paths: Vec<String>,
+        library: u64,
+    },
     /// Confirm moving photos dropped on a Folders row into that folder on disk
     /// (`photo.moveToFolder`). `name`: the folder's name, as the question says it.
     MovePhotos {
