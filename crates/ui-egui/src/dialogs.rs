@@ -2153,7 +2153,11 @@ fn dialog_content(app: &mut LightcraftApp, ui: &mut egui::Ui, t: &Tokens, body_m
         Dialog::DeleteEffects { .. } => delete_effects_body(ui, t, dlg),
         Dialog::ConfirmDeleteFromDisk { paths, .. } => {
             let count = paths.len();
-            let what = if count == 1 { "this original photo".to_string() } else { format!("these {count} original photos") };
+            let what = if count == 1 {
+                crate::i18n::tr("this original photo").to_string()
+            } else {
+                crate::i18n::tr_format!("these {count} original photos", count = count)
+            };
             ui.label(crate::i18n::tr_format!("Permanently delete {what} from disk?", what = what));
             ui.label(
                 egui::RichText::new(crate::i18n::tr("The original files will be permanently deleted, not moved to the Recycle Bin. This cannot be undone."))
@@ -2166,7 +2170,7 @@ fn dialog_content(app: &mut LightcraftApp, ui: &mut egui::Ui, t: &Tokens, body_m
             if let Some(path) = paths.first() {
                 ui.label(egui::RichText::new(path).color(t.text_dim).small());
                 if count > 1 {
-                    ui.label(egui::RichText::new(format!("… and {} more", count - 1)).color(t.text_dim));
+                    ui.label(egui::RichText::new(crate::i18n::tr_format!("… and {more} more", more = count - 1)).color(t.text_dim));
                 }
             }
         }
