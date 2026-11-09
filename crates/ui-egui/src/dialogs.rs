@@ -2170,7 +2170,7 @@ fn dialog_content(app: &mut LightcraftApp, ui: &mut egui::Ui, t: &Tokens, body_m
             if *skipped_no_original > 0 {
                 ui.label(egui::RichText::new(crate::i18n::tr_format!(
                     "{count} selected item(s) have no original file on disk and will be skipped.",
-                    count = skipped_no_original
+                    count = *skipped_no_original
                 )).color(t.text_dim));
             }
             if let Some(path) = paths.first() {
