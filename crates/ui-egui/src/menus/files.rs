@@ -1,4 +1,111 @@
 use super::{Dialog, LightcraftApp, Value, json};
+use lightcraft_catalog::{PhotoId, Source};
+use std::collections::HashSet;
+use std::path::Path;
+
+/// Ask before destroying the originals. The selected IDs and paths are frozen in the
+/// dialog so an intervening selection change cannot redirect the deletion.
+pub(super) fn request_delete_from_disk(app: &mut LightcraftApp) -> Result<Value, String> {
+    if cfg!(target_arch = "wasm32") {
+        return Err("Deleting originals from disk is available only in the desktop app".into());
+    }
+    let selected = app.session.selected();
+    if selected.is_empty() {
+        return Err("Select at least one photo to delete from disk".into());
+    }
+    let mut ids = Vec::with_capacity(selected.len());
+    let mut paths = Vec::with_capacity(selected.len());
+    let mut unique = HashSet::new();
+    for id in selected {
+        let Some(photo) = app.session.catalog.photo(id) else {
+            return Err(format!("Photo {} no longer exists in the library", id.0));
+        };
+        let Source::File { path } = &photo.source else {
+            return Err("A selected photo has no original file on disk".into());
+        };
+        if !Path::new(path).is_absolute() || !unique.insert(path.clone()) {
+            return Err("A selected photo has an invalid or duplicate original file path".into());
+        }
+        // Do not destroy an original referenced by another photo/virtual copy in the catalog.
+        if app.session.catalog.photos().any(|other| {
+            other.id != id && matches!(&other.source, Source::File { path: other_path } if other_path == path)
+        }) {
+            return Err(format!("The original {path} is referenced by another library photo; remove that reference first"));
+        }
+        ids.push(id.0);
+        paths.push(path.clone());
+    }
+    let count = ids.len();
+    app.ui.dialog = Some(Dialog::ConfirmDeleteFromDisk { ids, paths, library: app.session.library_generation() });
+    Ok(json!({"confirmationRequired": true, "count": count}))
+}
+
+/// Called ONLY after the irreversible-deletion confirmation. Keep failed photos in the
+/// catalog, including files that could not be removed due to permissions or a disconnected drive.
+/// Sidecars and neighboring files are deliberately not removed.
+pub(super) fn delete_from_disk(app: &mut LightcraftApp, ids: &[u64], paths: &[String], library: u64) -> Result<Value, String> {
+    if cfg!(target_arch = "wasm32") {
+        return Err("Deleting originals from disk is available only in the desktop app".into());
+    }
+    if library != app.session.library_generation() {
+        return Err("The library changed since the confirmation was opened; no files were deleted".into());
+    }
+    if ids.is_empty() || ids.len() != paths.len() {
+        return Err("There are no valid original files to delete".into());
+    }
+
+    // Revalidate every record *before* removing anything. A catalog operation or an
+    // automation could have changed the paths while the confirmation was open.
+    let mut unique = HashSet::new();
+    for (&id, path) in ids.iter().zip(paths) {
+        let pid = PhotoId(id);
+        let source_matches = app.session.catalog.photo(pid).is_some_and(|photo| {
+            matches!(&photo.source, Source::File { path: current } if current == path)
+        });
+        if !source_matches || !Path::new(path).is_absolute() || !unique.insert(path) {
+            return Err("The selected originals changed since the confirmation was opened; nothing was deleted".into());
+        }
+        if app.session.catalog.photos().any(|other| {
+            other.id != pid && matches!(&other.source, Source::File { path: other_path } if other_path == path)
+        }) {
+            return Err(format!("{path} is still referenced by another photo; nothing was deleted"));
+        }
+    }
+
+    let mut removed_ids = Vec::new();
+    let mut failed = Vec::new();
+    for (&id, path) in ids.iter().zip(paths) {
+        // Never recursively delete a directory or follow a symlink/reparse-point.
+        // A missing file is a failure, not permission to remove its catalog record.
+        let disk_result = std::fs::symlink_metadata(path).and_then(|m| {
+            if m.file_type().is_file() {
+                std::fs::remove_file(path)
+            } else {
+                Err(std::io::Error::new(std::io::ErrorKind::InvalidInput, "not a regular file"))
+            }
+        });
+        match disk_result {
+            Ok(()) => removed_ids.push(id),
+            Err(e) => failed.push(format!("{path}: {e}")),
+        }
+    }
+    // A successful disk deletion is permanent. Remove only those photos from the catalog;
+    // if a catalog write fails, report that fact rather than claiming the files still exist.
+    if !removed_ids.is_empty() {
+        app.run("photo.deletePermanently", json!({"ids": removed_ids}))
+            .map_err(|e| format!("Original files were deleted, but their library records could not be removed: {e}"))?;
+    }
+    if !failed.is_empty() {
+        return Err(format!(
+            "Deleted {} original file(s). {} failed and remain in the library:\n{}",
+            removed_ids.len(),
+            failed.len(),
+            failed.join("\n")
+        ));
+    }
+    Ok(json!({"deletedFromDisk": removed_ids.len()}))
+}
+
 
 /// The Delete key in an album: a normal album loses the selected photos (`album.removePhotos`),
 /// which stay in the library and their folder; a smart album keeps them (its rules decide) and
