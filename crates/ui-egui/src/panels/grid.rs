@@ -1573,6 +1573,16 @@ fn context_menu_delete(app: &mut LightcraftApp, ui: &mut egui::Ui) {
             let _ = crate::menubar::run_item(app, "photo.delete", json!({}));
         }
     }
+    // Deliberately separate from Delete Permanently (which removes catalog records only).
+    // The confirmation dialog explains that this destroys the original file itself.
+    let delete_disk = ui.add_enabled(
+        crate::menus::ui_enabled(app, "photo.deleteFromDisk"),
+        egui::Button::new(crate::i18n::tr("Delete from Disk…")),
+    );
+    register(ui, "button:contextDeleteFromDisk", delete_disk.rect);
+    if delete_disk.clicked() {
+        let _ = crate::menubar::run_item(app, "photo.deleteFromDisk", json!({}));
+    }
 }
 
 #[cfg(test)]
