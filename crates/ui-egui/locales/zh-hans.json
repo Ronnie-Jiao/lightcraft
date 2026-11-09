@@ -2434,5 +2434,6 @@
   "The original files will be permanently deleted, not moved to the Recycle Bin. This cannot be undone.": "原始文件将被永久删除，不会进入回收站。此操作无法撤销。",
   "Only the selected original files are deleted; XMP sidecars and neighboring files are kept.": "仅删除选中的原始照片文件；XMP 附属文件及同文件夹中的其他文件会保留。",
   "… and {more} more": "……还有 {more} 个文件",
-  "Permanently deleted {n} original file(s) from disk": "已从磁盘永久删除 {n} 个原始文件"
+  "Permanently deleted {n} original file(s) from disk": "已从磁盘永久删除 {n} 个原始文件",
+  "{count} selected item(s) have no original file on disk and will be skipped.": "选中的 {count} 个项目没有磁盘原文件，将跳过。"
 }
