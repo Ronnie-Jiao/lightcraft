@@ -43,7 +43,7 @@ pub(super) fn request_delete_from_disk(app: &mut LightcraftApp) -> Result<Value,
 /// Called ONLY after the irreversible-deletion confirmation. Keep failed photos in the
 /// catalog, including files that could not be removed due to permissions or a disconnected drive.
 /// Sidecars and neighboring files are deliberately not removed.
-pub(super) fn delete_from_disk(app: &mut LightcraftApp, ids: &[u64], paths: &[String], library: u64) -> Result<Value, String> {
+pub(crate) fn delete_from_disk(app: &mut LightcraftApp, ids: &[u64], paths: &[String], library: u64) -> Result<Value, String> {
     if cfg!(target_arch = "wasm32") {
         return Err("Deleting originals from disk is available only in the desktop app".into());
     }
