@@ -32,9 +32,11 @@ pub fn ui_enabled(app: &LightcraftApp, id: &str) -> bool {
     match id {
         "library.selectOnlyActive" => app.session.active().is_some(),
         "photo.deleteFromDisk" => {
+            // A mixed selection may contain generated demo scenes with no original file.
+            // Offer disk deletion whenever at least one real file is selected; the
+            // confirmation includes only file-backed photos.
             !cfg!(target_arch = "wasm32")
-                && !app.session.selected().is_empty()
-                && app.session.selected().iter().all(|id| {
+                && app.session.selected().iter().any(|id| {
                     app.session.catalog.photo(*id).is_some_and(|p| matches!(&p.source, lightcraft_catalog::Source::File { .. }))
                 })
         },
