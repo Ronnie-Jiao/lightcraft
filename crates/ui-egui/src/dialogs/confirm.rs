@@ -218,7 +218,7 @@ pub fn confirm_dialog(app: &mut LightcraftApp, dlg: &Dialog) -> Result<serde_jso
         }
         Dialog::Merge { opts } => crate::merge::start_final(app, opts),
         Dialog::Import { opts } => crate::import::start(app, opts),
-        Dialog::ConfirmDeleteFromDisk { ids, paths, library } => {
+        Dialog::ConfirmDeleteFromDisk { ids, paths, library, .. } => {
             crate::menus::delete_from_disk(app, ids, paths, *library)
         },
         Dialog::ConfirmDelete { .. } => app.run("photo.delete", json!({})),
