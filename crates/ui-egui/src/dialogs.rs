@@ -2167,6 +2167,12 @@ fn dialog_content(app: &mut LightcraftApp, ui: &mut egui::Ui, t: &Tokens, body_m
                 egui::RichText::new(crate::i18n::tr("Only the selected original files are deleted; XMP sidecars and neighboring files are kept."))
                     .color(t.text_dim),
             );
+            if *skipped_no_original > 0 {
+                ui.label(egui::RichText::new(crate::i18n::tr_format!(
+                    "{count} selected item(s) have no original file on disk and will be skipped.",
+                    count = skipped_no_original
+                )).color(t.text_dim));
+            }
             if let Some(path) = paths.first() {
                 ui.label(egui::RichText::new(path).color(t.text_dim).small());
                 if count > 1 {
