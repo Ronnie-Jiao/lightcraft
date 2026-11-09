@@ -2151,7 +2151,7 @@ fn dialog_content(app: &mut LightcraftApp, ui: &mut egui::Ui, t: &Tokens, body_m
             crate::panels::mask_effects::manage_body(app, ui, search, selected, rename, confirm_delete, new_group)
         }
         Dialog::DeleteEffects { .. } => delete_effects_body(ui, t, dlg),
-        Dialog::ConfirmDeleteFromDisk { paths, .. } => {
+        Dialog::ConfirmDeleteFromDisk { paths, skipped_no_original, .. } => {
             let count = paths.len();
             let what = if count == 1 {
                 crate::i18n::tr("this original photo").to_string()
