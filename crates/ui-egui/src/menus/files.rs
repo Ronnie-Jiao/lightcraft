@@ -422,7 +422,7 @@ mod disk_deletion_tests {
         std::fs::write(&path, b"test").unwrap();
         let mut app = app_for(&path);
         request_delete_from_disk(&mut app).unwrap();
-        let Some(Dialog::ConfirmDeleteFromDisk { ids, paths, library }) = app.ui.dialog.take() else {
+        let Some(Dialog::ConfirmDeleteFromDisk { ids, paths, library, .. }) = app.ui.dialog.take() else {
             panic!("expected disk deletion confirmation");
         };
         let result = delete_from_disk(&mut app, &ids, &paths, library).unwrap();
@@ -448,7 +448,7 @@ mod disk_deletion_tests {
         assert_eq!(request["confirmationRequired"], true);
         assert!(path.exists(), "choosing the menu item must only open a confirmation");
 
-        let Some(Dialog::ConfirmDeleteFromDisk { ids, paths, library }) = app.ui.dialog.take() else {
+        let Some(Dialog::ConfirmDeleteFromDisk { ids, paths, library, .. }) = app.ui.dialog.take() else {
             panic!("expected a confirmation dialog for the Recently Deleted selection");
         };
         let result = delete_from_disk(&mut app, &ids, &paths, library).unwrap();
@@ -483,7 +483,7 @@ mod disk_deletion_tests {
         assert_eq!(response["count"], 1);
         assert_eq!(response["skippedNoOriginal"], 1);
         assert!(path.exists());
-        let Some(Dialog::ConfirmDeleteFromDisk { ids, paths, library }) = app.ui.dialog.take() else {
+        let Some(Dialog::ConfirmDeleteFromDisk { ids, paths, library, .. }) = app.ui.dialog.take() else {
             panic!("expected confirmation for the single real original");
         };
         assert_eq!(ids, vec![1]);
@@ -499,7 +499,7 @@ mod disk_deletion_tests {
         std::fs::write(&path, b"test").unwrap();
         let mut app = app_for(&path);
         request_delete_from_disk(&mut app).unwrap();
-        let Some(Dialog::ConfirmDeleteFromDisk { ids, paths, library }) = app.ui.dialog.take() else {
+        let Some(Dialog::ConfirmDeleteFromDisk { ids, paths, library, .. }) = app.ui.dialog.take() else {
             panic!("expected disk deletion confirmation");
         };
         std::fs::remove_file(&path).unwrap();
