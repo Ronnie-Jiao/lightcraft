@@ -30,6 +30,13 @@ fn thumb_size_view(app: &LightcraftApp) -> bool {
 pub fn ui_enabled(app: &LightcraftApp, id: &str) -> bool {
     match id {
         "library.selectOnlyActive" => app.session.active().is_some(),
+        "photo.deleteFromDisk" => {
+            !cfg!(target_arch = "wasm32")
+                && !app.session.selected().is_empty()
+                && app.session.selected().iter().all(|id| {
+                    app.session.catalog.photo(*id).is_some_and(|p| matches!(p.source, lightcraft_catalog::Source::File { .. }))
+                })
+        },
         "view.thumbSizeUp" | "view.thumbSizeDown" => thumb_size_view(app),
         "dialog.contactSheet" | "app.contactSheet" | "dialog.print" | "app.print" => {
             !cfg!(target_arch = "wasm32") && app.session.active().is_some() && app.export.is_none()
