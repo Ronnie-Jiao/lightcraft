@@ -16,12 +16,16 @@ pub(super) fn request_delete_from_disk(app: &mut LightcraftApp) -> Result<Value,
     let mut ids = Vec::with_capacity(selected.len());
     let mut paths = Vec::with_capacity(selected.len());
     let mut unique = HashSet::new();
+    let mut skipped_no_original = 0usize;
     for id in selected {
         let Some(photo) = app.session.catalog.photo(id) else {
             return Err(format!("Photo {} no longer exists in the library", id.0));
         };
+        // Generated demo scenes cannot have an original on disk. Skip those
+        // instead of disabling disk deletion of the real photographs in the selection.
         let Source::File { path } = &photo.source else {
-            return Err("A selected photo has no original file on disk".into());
+            skipped_no_original += 1;
+            continue;
         };
         if !Path::new(path).is_absolute() || !unique.insert(path.clone()) {
             return Err("A selected photo has an invalid or duplicate original file path".into());
