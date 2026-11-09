@@ -40,8 +40,11 @@ pub(super) fn request_delete_from_disk(app: &mut LightcraftApp) -> Result<Value,
         paths.push(path.clone());
     }
     let count = ids.len();
+    if count == 0 {
+        return Err("None of the selected photos has an original file on disk".into());
+    }
     app.ui.dialog = Some(Dialog::ConfirmDeleteFromDisk { ids, paths, library: app.session.library_generation() });
-    Ok(json!({"confirmationRequired": true, "count": count}))
+    Ok(json!({"confirmationRequired": true, "count": count, "skippedNoOriginal": skipped_no_original}))
 }
 
 /// Called ONLY after the irreversible-deletion confirmation. Keep failed photos in the
